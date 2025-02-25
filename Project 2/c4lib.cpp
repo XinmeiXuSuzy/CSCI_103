@@ -23,24 +23,38 @@ enum BoardValue playerToValue[2] = {RED, YELLOW};
 int findYValue(BoardValue** board, int ydim,  int x)
 {
   // You complete!
-
-
-
+  for (int i = 0; i < ydim; i++) {
+    if (board[i][x] == BLANK) {
+        return i;
+    }
+  }
+  return -1;
 }
 
 BoardValue** allocateBoard(int ydim,  int xdim)
 {
   // You complete!
+  BoardValue** board = new BoardValue*[ydim];
+  for (int i = 0; i < ydim; i++) {
+    board[i] = new BoardValue[xdim];
+  }
 
+  // Initialize board values to blank
+  for (int i = 0; i < ydim; i++) {
+    for (int j = 0; j < xdim; j++) {
+        board[i][j] = BLANK;
+    }
+  }
 
-
+  return board;
 }
 void deallocateBoard(BoardValue** board,  int ydim)
 {
   // You complete!
-
-
-
+  for (int i = 0; i < ydim; i++) {
+    delete [] board[i];
+  }
+  delete [] board;
 }
 
 void printBoard(BoardValue** board,  int ydim, int xdim)
@@ -64,10 +78,13 @@ bool getNextHumanInput(
   int currentPlayer)
 {
   // You complete!
-
-
-
-
+  bool error = true;
+  // only proceed if user input is in valid range 
+  if (valid_position(*y, *x, ydim, xdim)) {
+    board[*y][*x] = playerToValue[currentPlayer];
+    error = false;
+  }
+  return error;
 }
 
 bool hasWon(
@@ -78,11 +95,39 @@ bool hasWon(
 {
   // Keep, modify, or delete these as you desire
   const int NDIRS=4;
-  const int yDirDelta[NDIRS] = {+1,  0, +1, +1};
-  const int xDirDelta[NDIRS] = { 0, +1, -1, +1};
+  const int yDirDelta[NDIRS] = {1, 1, 0, -1}; // four directions -> eight directions 
+  const int xDirDelta[NDIRS] = {0, 1, 1, 1};
   // You complete!
-
-
+  for (int i = 0; i < NDIRS; i++) {
+    int count = 1;
+    
+    // positive direction 
+    for (int step = 1; step < 4; step++) {
+        int ny = sy + step * yDirDelta[i];
+        int nx = sx + step * xDirDelta[i];
+        if (ny >= 0 && ny < ydim && nx >= 0 && nx < xdim && board[ny][nx] == playerToValue[currentPlayer]) {
+            count++;
+        } else {
+            break;
+        }
+    }
+    
+    // negative direction 
+    for (int step = 1; step < 4; step++) {
+        int ny = sy - step * yDirDelta[i];
+        int nx = sx - step * xDirDelta[i];
+        if (ny >= 0 && ny < ydim && nx >= 0 && nx < xdim && board[ny][nx] == playerToValue[currentPlayer]) {
+            count++;
+        } else {
+            break;
+        }
+    }
+    
+    if (count >= 4) {
+        return true;
+    }
+  }
+  return false;
 }
 
 bool isDraw(
@@ -90,33 +135,67 @@ bool isDraw(
   int ydim,  int xdim)
 {
   // You complete!
-
-
+  for (int i = 0; i < ydim; i++) {
+    for (int j = 0; j < xdim; j++) {
+        if (board[i][j] == BLANK) {
+            return false;
+        }
+    }
+  }
+  return true;
 }
 
 
 
 bool getUserAIInput(
-  BoardValue** board, 
-  int ydim,  int xdim, 
-  int *y, int *x,
-  int currentPlayer)
+    BoardValue** board, 
+    int ydim, int xdim, 
+    int *y, int *x,
+    int currentPlayer)
 {
-  // You complete!
-  // Check if the current player can win
+    int opponent = (currentPlayer == 0) ? 1 : 0;
 
+    // First, check if we can win
+    for (int j = 0; j < xdim; j++) {
+        int i = findYValue(board, ydim, j);
+        if (i != -1) {  // Valid move
+            board[i][j] = playerToValue[currentPlayer]; 
+            if (hasWon(board, ydim, xdim, i, j, currentPlayer)) {
+                *y = i; *x = j;
+                return false;  // Play winning move
+            }
+            board[i][j] = BLANK;  // Undo move
+        }
+    }
 
-  // Check if we need to block 
-  //  We can greedily play the first blocking location since
-  //  if they can win in multiple ways it does not matter which
-  //  we choose.
+    // Second, check if we need to block opponent's win
+    for (int j = 0; j < xdim; j++) {
+        int i = findYValue(board, ydim, j);
+        if (i != -1) {  // Valid move
+            board[i][j] = playerToValue[opponent]; 
+            if (hasWon(board, ydim, xdim, i, j, opponent)) {
+                *y = i; *x = j;
+                board[i][j] = playerToValue[currentPlayer];  // Play blocking move
+                return false;
+            }
+            board[i][j] = BLANK;  // Undo move
+        }
+    }
 
+    // Default: Play the first available move
+    for (int j = 0; j < xdim; j++) {
+        int i = findYValue(board, ydim, j);
+        if (i != -1) {
+            *y = i; *x = j;
+            board[i][j] = playerToValue[currentPlayer];
+            return false;
+        }
+    }
 
-  // Add any other logic for how to choose a location to play
-  // if neither case above occurs
+    return true;  // No move available (should not happen unless board is full)
+}
 
   
-}
 
 // Complete - Do not alter
 bool getRandomAIInput(
@@ -145,6 +224,11 @@ bool getRandomAIInput(
   }
   delete [] possible;
   return error;
+}
+
+bool valid_position(int y, int x, int ydim, int xdim) {
+    if ((0 <= y and y < ydim) and (0 <= x and x < xdim)) {return true;};
+    return false;
 }
 
 

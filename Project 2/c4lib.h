@@ -1,6 +1,7 @@
 #ifndef C4LIB_H
 #define C4LIB_H
 
+// int findYValue(BoardValue** board, int ydim,  int x);
 
 /**
  * @brief An enumerated type to make the code more readable
@@ -129,6 +130,6 @@ bool getRandomAIInput(
 // --------------------------------------------------------------------------
 // You can add prototypes if you want to define other functions in c4lib.cpp
 // that you'd like to call in connect4.cpp
-
+bool valid_position(int y, int x, int ydim, int xdim);
 
 #endif

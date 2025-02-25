@@ -1,12 +1,13 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include <cstdlib>
 #include "c4lib.h"
 using namespace std;
 
 // Add any prototypes and/or functions you like here
 
-
+int findYValue(BoardValue** board, int ydim,  int x);
 
 int main(int argc, char* argv[])
 {
@@ -19,19 +20,20 @@ int main(int argc, char* argv[])
 
   // Add code here to convert the  command line arguments to  
   //  set the value ydim and xdim 
-  
+  ydim = atoi(argv[1]);
+  xdim = atoi(argv[2]);
   
   // Since the seed is optional we need to check if there
 	// is another argument
   if(argc >= 5){
 		// set the seed with the integer value from the command line
-
+    seed = atoi(argv[4]);
   }
-	else {
-		// if no seed was provided we'll use the current time
+  else { // when there are only four arguments in total provided 
+        // if no seed was provided we'll use the current time
     // Do not alter
-		seed = time(0);
-	}
+    seed = time(0);
+  }
   srand(seed);
 
 
@@ -49,13 +51,18 @@ int main(int argc, char* argv[])
   cout << "Num players: " << numP << endl;
 
   // Any initialization code
+  bool draw = false;
+  int winner = -1;
+
+  // Make board 
+  board = allocateBoard(ydim, xdim);
 
   // Do not alter these declarations 
   int turn = 0;        // Number of turns for the game 
   int player = 0;      // MUST alternate between 0 (red) and 1 (yellow) 
                        // to represent the two players
   bool error = false;  // input error?
-  while( /* condition check to continue the game */ ){
+  while( error == false ){
     // ------------------------------------------------------------
     // Do not alter
     
@@ -64,6 +71,8 @@ int main(int argc, char* argv[])
     printBoard(board, ydim, xdim);
     // Get the input, check for errors, a winner or a draw
     int x, y;
+
+
     if(numP == -1) {
       // Random vs. Random
       error = getRandomAIInput(board, ydim, xdim, &y, &x, player);
@@ -78,6 +87,19 @@ int main(int argc, char* argv[])
     }
     else {
       // Human vs. user AI ..or.. Human vs. Human
+      
+      cout << "Enter the location" << endl;
+      cin >> x; 
+      if (0 <= x and x < xdim) {
+        y = findYValue(board, ydim, x);
+        if (y == -1) { // column is full, early exit 
+            error = true;
+            break;
+        }
+      } else {
+        error = true;
+        break;
+      }
       error = getNextHumanInput(board, ydim, xdim, &y, &x, player);
     }
     // ------------------------------------------------------------
@@ -85,12 +107,26 @@ int main(int argc, char* argv[])
     // Add necessary code to deal with errors and determine if 
     // there is a winner or a draw. Then change to the next player
     // and repeat!
+    if (error == true) {
+        break;
+    }
 
+    if (hasWon(board, ydim, xdim, y, x, player)) {
+        winner = player;
+        break; 
+    }
 
-
+    if (isDraw(board, ydim, xdim) == true) { 
+        draw = true; 
+        break;
+    };
 
     // Be sure to switch the player
-
+    if (player == 0) {
+        player = 1;
+    } else if (player == 1) {
+        player = 0;
+    }
 
   }
   // Only fill in the conditions of the code below.  
@@ -98,24 +134,23 @@ int main(int argc, char* argv[])
 	//  have to complete the conditions based on your 
 	//  implementation above.
   printBoard(board, ydim, xdim);
-  if( /* condition for the game ending in a yellow win */) {
+  if( winner == 1 ) {
     cout << "Yellow wins" <<  endl;
   }
-  else if(/* condition for the game ending in a red win */) {
+  else if( winner == 0) {
     cout <<  "Red wins" <<  endl;
   }
-  else if(/* condition for the game ending in a draw */) {
+  else if(draw == true) {
     cout <<  "Draw" <<  endl;
   }
-  else if(/* condition for early exit or invalid input */) {
+  else if(error == true) {
     cout <<  "Early exit" <<  endl;
   }
   cout <<  "Last turn " << turn <<  endl;
 
   // Add any final cleanup or code that you deem necessary
 	// but no additional printing/output should be performed
-
-
+  deallocateBoard(board, ydim);
 
   return 0;
 }
